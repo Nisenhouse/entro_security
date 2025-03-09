@@ -11,6 +11,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
@@ -26,10 +27,14 @@ public class Main {
         String owner = "Nisenhouse";
         String repo = "entro_security";
         String token = "xxxx";
-        List<Content> filesContent = getFilesContent(owner, repo, token);
-        for (Content content : filesContent) {
-            String data = fetchData(content.getDownloadUrl(), token);
-            System.out.println(data);
+        List<CommitInfo> commitInfos = getCommits(owner, repo, token);
+        for (CommitInfo commitInfo : commitInfos) {
+            String url = commitInfo.getUrl();
+            List<String> files = getCommitFiles(url, token);
+            for (String file : files) {
+                String data = fetchData(url + "/" + file, token);
+                System.out.println(data);
+            }
         }
     }
 
@@ -40,6 +45,31 @@ public class Main {
             return getResponseContent(con);
         }
         return null;
+    }
+
+    private static List<CommitInfo> getCommitFiles(String urlString, String token) throws IOException {
+        HttpURLConnection con = getHttpURLConnection(token, urlString, GET);
+        int status = con.getResponseCode();
+        String responseContent;
+        if (status == 200) {
+            responseContent = getResponseContent(con);
+            Type listType = new TypeToken<ArrayList<CommitInfo>>(){}.getType();
+            return new Gson().fromJson(responseContent, listType);
+        }
+        return new ArrayList<>();
+    }
+
+    private static List<CommitInfo> getCommits(String owner, String repo, String token) throws IOException {
+        String urlString = String.format("https://api.github.com/repos/%s/%s/commits", owner, repo);
+        HttpURLConnection con = getHttpURLConnection(token, urlString, GET);
+        int status = con.getResponseCode();
+        String responseContent;
+        if (status == 200) {
+            responseContent = getResponseContent(con);
+            Type listType = new TypeToken<ArrayList<CommitInfo>>(){}.getType();
+            return new Gson().fromJson(responseContent, listType);
+        }
+        return new ArrayList<>();
     }
 
     private static List<Content> getFilesContent(String owner, String repo, String token) throws IOException {
@@ -77,5 +107,15 @@ public class Main {
         }
         in.close();
         return content.toString();
+    }
+
+    public static boolean containsAwsAccessKey(String data) {
+        String accessKeyPattern = "(AKIA|ASIA)[A-Z0-9]{16}";
+        return Pattern.matches(accessKeyPattern, data);
+    }
+
+    public static boolean containsAwsSecretKey(String data) {
+        String secretKeyPattern = "[A-Za-z0-9/+=]{40}";
+        return Pattern.matches(secretKeyPattern, data);
     }
 }
