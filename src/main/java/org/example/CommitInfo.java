@@ -2,9 +2,9 @@ package org.example;
 
 public class CommitInfo {
     private String url;
-    private String author;
+    private Author author;
 
-    public CommitInfo(String url, String author) {
+    public CommitInfo(String url, Author author) {
         this.url = url;
         this.author = author;
     }
@@ -17,11 +17,27 @@ public class CommitInfo {
         this.url = url;
     }
 
-    public String getAuthor() {
+    public Author getAuthor() {
         return author;
     }
 
-    public void setAuthor(String author) {
+    public void setAuthor(Author author) {
         this.author = author;
+    }
+
+    public class Author {
+        private String login;
+
+        public Author(String login) {
+            this.login = login;
+        }
+
+        public String getLogin() {
+            return login;
+        }
+
+        public void setLogin(String login) {
+            this.login = login;
+        }
     }
 }

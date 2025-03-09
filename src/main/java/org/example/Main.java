@@ -11,6 +11,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
@@ -22,6 +23,8 @@ public class Main {
     public static final String ACCEPT_VALUE = "application/vnd.github.v3+json";
     public static final String GET = "GET";
     public static final String FILE = "file";
+    private static final Pattern accessKeyPattern = Pattern.compile("(AKIA|ASIA)[A-Z0-9]{16}");
+    private static final Pattern secretKeyPattern = Pattern.compile("[A-Za-z0-9/+=]{40}");
 
     public static void main(String[] args) throws IOException {
         String owner = "Nisenhouse";
@@ -30,13 +33,31 @@ public class Main {
         List<CommitInfo> commitInfos = getCommits(owner, repo, token);
         for (CommitInfo commitInfo : commitInfos) {
             String url = commitInfo.getUrl();
-            List<String> files = getCommitFiles(url, token);
-            for (String file : files) {
-                String data = fetchData(url + "/" + file, token);
-                System.out.println(data);
+            List<Commit.File> files = getCommitFiles(url, token);
+            for (Commit.File file : files) {
+                String patch = file.getPatch();
+                String awsAccessKey = containsAwsAccessKey(patch);
+                String awsSecretKey = containsAwsSecretKey(patch);
+                if (awsAccessKey != null || awsSecretKey != null) {
+                    if (awsAccessKey != null) {
+                        System.out.println("Value: " + awsAccessKey);
+                    }
+                    if (awsSecretKey != null) {
+                        System.out.println("Value: " + awsSecretKey);
+                    }
+                    System.out.println("Commit file: " + url);
+                    System.out.println("Author: " + commitInfo.getAuthor().getLogin());
+                }
             }
         }
     }
+
+    /* example:
+
+    ASIAJLVYNHUWCPKOPSYQ
+
+    DcCc9H6oCkGUSp3Rhmsx8NIfVG8kO2T/3jORxuZY
+     */
 
     private static String fetchData(String downloadUrl, String token) throws IOException {
         HttpURLConnection con = getHttpURLConnection(token, downloadUrl, GET);
@@ -47,14 +68,14 @@ public class Main {
         return null;
     }
 
-    private static List<CommitInfo> getCommitFiles(String urlString, String token) throws IOException {
+    private static List<Commit.File> getCommitFiles(String urlString, String token) throws IOException {
         HttpURLConnection con = getHttpURLConnection(token, urlString, GET);
         int status = con.getResponseCode();
         String responseContent;
         if (status == 200) {
             responseContent = getResponseContent(con);
-            Type listType = new TypeToken<ArrayList<CommitInfo>>(){}.getType();
-            return new Gson().fromJson(responseContent, listType);
+            Commit commit = new Gson().fromJson(responseContent, Commit.class);
+            return commit.getFiles();
         }
         return new ArrayList<>();
     }
@@ -109,13 +130,19 @@ public class Main {
         return content.toString();
     }
 
-    public static boolean containsAwsAccessKey(String data) {
-        String accessKeyPattern = "(AKIA|ASIA)[A-Z0-9]{16}";
-        return Pattern.matches(accessKeyPattern, data);
+    public static String containsAwsAccessKey(String data) {
+        Matcher matcher = accessKeyPattern.matcher(data);
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+        return null;
     }
 
-    public static boolean containsAwsSecretKey(String data) {
-        String secretKeyPattern = "[A-Za-z0-9/+=]{40}";
-        return Pattern.matches(secretKeyPattern, data);
+    public static String containsAwsSecretKey(String data) {
+        Matcher matcher = secretKeyPattern.matcher(data);
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+        return null;
     }
 }
