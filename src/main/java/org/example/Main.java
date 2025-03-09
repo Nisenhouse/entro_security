@@ -11,6 +11,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -27,9 +28,13 @@ public class Main {
     private static final Pattern secretKeyPattern = Pattern.compile("([A-Za-z0-9/+=]{40})");
 
     public static void main(String[] args) throws IOException {
-        String owner = "Nisenhouse";
-        String repo = "entro_security";
-        String token = "xxxx";
+        Scanner myObj = new Scanner(System.in);
+        System.out.println("Enter Owner");
+        String owner = myObj.nextLine();
+        System.out.println("Enter repo");
+        String repo = myObj.nextLine();
+        System.out.println("Enter token");
+        String token = myObj.nextLine();
         checkRepo(owner, repo, token);
     }
 
