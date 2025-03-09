@@ -24,12 +24,16 @@ public class Main {
     public static final String GET = "GET";
     public static final String FILE = "file";
     private static final Pattern accessKeyPattern = Pattern.compile("(AKIA|ASIA)[A-Z0-9]{16}");
-    private static final Pattern secretKeyPattern = Pattern.compile("[A-Za-z0-9/+=]{40}");
+    private static final Pattern secretKeyPattern = Pattern.compile("([A-Za-z0-9/+=]{40})");
 
     public static void main(String[] args) throws IOException {
         String owner = "Nisenhouse";
         String repo = "entro_security";
         String token = "xxxx";
+        checkRepo(owner, repo, token);
+    }
+
+    private static void checkRepo(String owner, String repo, String token) throws IOException {
         List<CommitInfo> commitInfos = getCommits(owner, repo, token);
         for (CommitInfo commitInfo : commitInfos) {
             String url = commitInfo.getUrl();
@@ -133,7 +137,7 @@ public class Main {
     public static String containsAwsAccessKey(String data) {
         Matcher matcher = accessKeyPattern.matcher(data);
         if (matcher.find()) {
-            return matcher.group(1);
+            return matcher.group(0);
         }
         return null;
     }
@@ -141,7 +145,7 @@ public class Main {
     public static String containsAwsSecretKey(String data) {
         Matcher matcher = secretKeyPattern.matcher(data);
         if (matcher.find()) {
-            return matcher.group(1);
+            return matcher.group(0);
         }
         return null;
     }
